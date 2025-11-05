@@ -12,6 +12,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
 
       - name: Extract ticket information
@@ -26,10 +27,21 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Create and checkout branch
+      - name: Ensure we're on latest main and create branch
         run: |
+          # Fetch latest changes
+          git fetch origin main
+
+          # Reset to latest main
+          git checkout main
+          git reset --hard origin/main
+
+          # Delete remote branch if it exists (cleanup from previous failed runs)
           BRANCH_NAME="fix/${{ steps.ticket.outputs.ticket_id }}"
-          echo "Creating branch: $BRANCH_NAME"
+          git push origin --delete "$BRANCH_NAME" 2>/dev/null || echo "Branch doesn't exist remotely, continuing..."
+
+          # Create and checkout new branch from latest main
+          echo "Creating branch: $BRANCH_NAME from latest main"
           git checkout -b "$BRANCH_NAME"
 
       - name: Generate HTML file
