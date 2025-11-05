@@ -38,8 +38,14 @@ jobs:
           TICKET_SUMMARY="${{ github.event.client_payload.ticket_summary }}"
           TICKET_DESCRIPTION="${{ github.event.client_payload.ticket_description }}"
           JIRA_URL="${{ steps.ticket.outputs.jira_url }}"
+          GENERATED_TIME=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
 
-          cat > "${TICKET_ID}.html" << 'EOF'
+          # Escape HTML special characters in variables
+          TICKET_SUMMARY_ESCAPED=$(echo "$TICKET_SUMMARY" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s/"/\&quot;/g')
+          TICKET_DESCRIPTION_ESCAPED=$(echo "$TICKET_DESCRIPTION" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s/"/\&quot;/g')
+
+          # Generate HTML file directly with variables
+          cat > "${TICKET_ID}.html" << EOF
           <!DOCTYPE html>
           <html lang="en">
           <head>
@@ -99,14 +105,14 @@ jobs:
                   <h1>${TICKET_ID}</h1>
 
                   <div class="meta">
-                      <strong>Summary:</strong> ${TICKET_SUMMARY}<br>
+                      <strong>Summary:</strong> ${TICKET_SUMMARY_ESCAPED}<br>
                       <strong>JIRA Link:</strong> <a href="${JIRA_URL}" target="_blank">${JIRA_URL}</a><br>
-                      <strong>Generated:</strong> $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+                      <strong>Generated:</strong> ${GENERATED_TIME}
                   </div>
 
                   <div class="description">
                       <h2>Description</h2>
-                      <p>${TICKET_DESCRIPTION}</p>
+                      <p>${TICKET_DESCRIPTION_ESCAPED}</p>
                   </div>
 
                   <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
@@ -119,14 +125,8 @@ jobs:
           </html>
           EOF
 
-          # Replace template variables with actual values
-          sed -i "s|\${TICKET_ID}|${TICKET_ID}|g" "${TICKET_ID}.html"
-          sed -i "s|\${TICKET_SUMMARY}|${TICKET_SUMMARY}|g" "${TICKET_ID}.html"
-          sed -i "s|\${TICKET_DESCRIPTION}|${TICKET_DESCRIPTION}|g" "${TICKET_ID}.html"
-          sed -i "s|\${JIRA_URL}|${JIRA_URL}|g" "${TICKET_ID}.html"
-
           echo "Generated ${TICKET_ID}.html"
-          cat "${TICKET_ID}.html"
+          echo "File size: $(wc -c < "${TICKET_ID}.html") bytes"
 
       - name: Commit changes
         run: |
