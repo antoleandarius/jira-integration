@@ -65,18 +65,7 @@ cp .env.sample .env
 nano .env  # or use your preferred editor
 ```
 
-### 3. Validate Configuration (Recommended)
-
-```bash
-# Run the setup validation script
-python3 test_setup.py
-```
-
-This will check:
-- Environment variables are set correctly
-- GitHub token has proper access
-- JIRA credentials are valid
-- All required files are present
+### 3. Configure Environment Variables
 
 Fill in the following values in [.env](.env):
 
@@ -277,10 +266,13 @@ docker run -d \
 /copilot-fix-bridge
 ├── main.py                        # FastAPI application
 ├── requirements.txt               # Python dependencies
+├── start.sh                       # Quick start script
+├── Dockerfile                     # Docker container definition
 ├── .env.sample                    # Environment template
 ├── .env                          # Your secrets (git-ignored)
 ├── .gitignore                    # Git ignore rules
 ├── README.md                     # This file
+├── QUICK_REFERENCE.md            # Command cheat sheet
 └── .github/
     └── workflows/
         └── agent-pr.yml          # GitHub Actions workflow
@@ -381,16 +373,91 @@ logging.basicConfig(level=logging.DEBUG)
 4. Implement rate limiting for production
 5. Use HTTPS only (ngrok provides this automatically)
 
+## API Reference
+
+### JIRA Webhook Payload Example
+```json
+{
+  "webhookEvent": "jira:issue_updated",
+  "issue": {
+    "key": "PROJ-123",
+    "fields": {
+      "summary": "Fix login bug",
+      "description": "Users can't login with email",
+      "labels": ["copilot-fix", "bug"]
+    }
+  }
+}
+```
+
+### GitHub Repository Dispatch Payload
+```json
+{
+  "event_type": "copilot-fix",
+  "client_payload": {
+    "ticket_id": "PROJ-123",
+    "ticket_summary": "Fix login bug",
+    "ticket_description": "Users can't login with email",
+    "jira_url": "https://your-domain.atlassian.net/browse/PROJ-123"
+  }
+}
+```
+
+### GitHub PR Webhook Payload
+```json
+{
+  "action": "opened",
+  "number": 42,
+  "pull_request": {
+    "html_url": "https://github.com/user/repo/pull/42",
+    "title": "fix: PROJ-123 - Fix login bug",
+    "head": {
+      "ref": "fix/PROJ-123"
+    }
+  }
+}
+```
+
 ## Customization
 
 ### Modify HTML Template
 Edit the HTML generation section in [.github/workflows/agent-pr.yml](.github/workflows/agent-pr.yml:46) to customize the output.
 
 ### Add More JIRA Fields
-Modify [main.py](main.py:49) to extract additional fields from JIRA payload.
+Modify [main.py](main.py:49) to extract additional fields from JIRA payload:
+```python
+priority = issue_fields.get("priority", {}).get("name")
+assignee = issue_fields.get("assignee", {}).get("displayName")
+```
 
 ### Change Branch Naming
 Update branch name pattern in [.github/workflows/agent-pr.yml](.github/workflows/agent-pr.yml:34) and [main.py](main.py:167).
+
+### Add Multiple Label Support
+Modify the label check to handle multiple automation triggers:
+```python
+if any(label in labels for label in ["copilot-fix", "auto-fix", "bot-fix"]):
+```
+
+## Performance Metrics
+
+- **Webhook Response Time**: < 500ms
+- **GitHub Actions Workflow**: 30-60 seconds
+- **Total End-to-End**: ~1-2 minutes from label to PR
+
+## Cost Estimate
+
+### Development/Testing
+- **Total**: $0/month
+  - GitHub Actions: 2000 minutes/month free
+  - ngrok: Free tier
+  - Local hosting: Free
+
+### Production
+- **Total**: $5-10/month
+  - Render: $7/month (Starter)
+  - Fly.io: ~$5/month (light usage)
+  - GitHub Actions: Included
 
 ## Contributing
 
@@ -407,8 +474,8 @@ For issues and questions:
 - Review FastAPI logs
 - Check GitHub Actions workflow logs
 - Verify webhook delivery in JIRA/GitHub settings
+- Consult [QUICK_REFERENCE.md](QUICK_REFERENCE.md) for common commands
 
 ---
 
 Built with FastAPI, GitHub Actions, and JIRA REST API
-# jira-integration

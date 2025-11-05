@@ -7,10 +7,7 @@
 cp .env.sample .env
 nano .env  # Fill in your credentials
 
-# 2. Validate setup
-python3 test_setup.py
-
-# 3. Start service
+# 2. Start service
 ./start.sh
 ```
 
@@ -83,9 +80,6 @@ Ctrl+C
 
 # Update dependencies
 pip install -r requirements.txt --upgrade
-
-# Run validation
-python3 test_setup.py
 ```
 
 ## Troubleshooting One-Liners
@@ -122,8 +116,8 @@ curl http://127.0.0.1:4040/api/tunnels | jq
 Configuration:  .env
 FastAPI App:    main.py
 Workflow:       .github/workflows/agent-pr.yml
+Start Script:   start.sh
 Logs:           Console output
-Test Script:    test_setup.py
 ```
 
 ## Environment Variables
@@ -182,8 +176,7 @@ Contains:
 ## Support Resources
 
 - **README.md**: Complete setup guide
-- **PROJECT_SUMMARY.md**: Architecture details
-- **test_setup.py**: Validation script
+- **QUICK_REFERENCE.md**: This file
 - **GitHub Actions Logs**: Workflow debugging
 - **FastAPI Logs**: Service debugging
 
